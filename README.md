@@ -1,0 +1,1 @@
+# baspana_arman.kz
