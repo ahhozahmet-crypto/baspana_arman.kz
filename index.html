@@ -11,26 +11,27 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
-        body { background: #f4ffff; color: #222; line-height: 1.6; }
+        body { background: #f4ffff; color: #222; }
         header { width: 100%; padding: 20px 8%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
-        .logo h2 { color: #00b8b0; font-weight: 800; font-size: 28px; }
+        .logo h2 { color: #00b8b0; font-weight: 800; }
         
-        .hero { padding: 100px 8% 50px; text-align: center; background: white; }
-        .hero h1 { font-size: 45px; color: #333; margin-bottom: 20px; font-weight: 800; }
+        .hero { padding: 60px 8%; text-align: center; }
+        .btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
         
-        .btns { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 30px; }
-        .btn { padding: 18px 35px; border-radius: 50px; text-decoration: none; font-weight: 700; cursor: pointer; border: none; font-size: 16px; transition: 0.3s; }
-        .btn-primary { background: #00cfc6; color: white; }
-        .btn-secondary { background: #f0f0f0; color: #333; }
-        .btn:disabled { background: #ccc !important; color: #888 !important; cursor: not-allowed; }
+        .btn { padding: 16px 32px; border-radius: 50px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; text-decoration: none; font-size: 16px; }
+        .btn-primary { background: #00cfc6; color: white; box-shadow: 0 5px 15px rgba(0, 207, 198, 0.3); }
+        .btn-secondary { background: white; color: #00b8b0; border: 2px solid #00b8b0; }
+        
+        /* Батырма бұғатталғандағы стиль */
+        .btn:disabled { background: #e0e0e0 !important; color: #999 !important; border: none !important; cursor: not-allowed; transform: none !important; }
 
-        .stats-section { padding: 50px 8%; text-align: center; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
-        .stat-card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-bottom: 5px solid #00b8b0; }
-        .stat-card h1 { font-size: 40px; color: #00b8b0; margin-top: 10px; }
+        .stats-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 40px; padding: 0 8%; }
+        .stat-card { background: white; padding: 30px; border-radius: 25px; min-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; flex: 1; }
+        .stat-card h3 { font-size: 16px; color: #666; margin-bottom: 10px; }
+        .stat-card h1 { color: #00b8b0; font-size: 38px; font-weight: 800; }
 
-        .contact-info { padding: 50px 8%; background: #fff; text-align: center; }
-        footer { background: #00b8b0; color: white; text-align: center; padding: 20px; margin-top: 50px; }
+        .info { text-align: center; margin-top: 40px; padding: 20px; color: #555; }
+        footer { text-align: center; padding: 30px; color: #bbb; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -39,89 +40,90 @@
 
 <section class="hero">
     <h1>Әр отбасыға баспана</h1>
-    <p>Мұқтаж жандарға көмек көрсету мақсатында құрылған қайырымдылық қоры.</p>
+    <p style="margin-top: 10px; color: #666;">Қайырымдылық жасап, үй кезегіне тіркеліңіз</p>
+    
     <div class="btns">
         <a class="btn btn-primary" href="https://pay.kaspi.kz/pay/kpiupo0h" target="_blank" onclick="handleDonation()">Садақа беру</a>
+        
         <button id="applyBtn" class="btn btn-secondary" onclick="handleApplication()">Өтініш беру</button>
     </div>
 </section>
 
-<section class="stats-section">
-    <h2>Қордың статистикасы</h2>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Жиналған қаражат</h3>
-            <h1 id="moneyCounter">0 ₸</h1>
-        </div>
-        <div class="stat-card">
-            <h3>Тіркелген халық саны</h3>
-            <h1 id="peopleCounter">0</h1>
-        </div>
+<section class="stats-grid">
+    <div class="stat-card">
+        <h3>Жиналған қаражат</h3>
+        <h1 id="moneyCounter">0 ₸</h1>
+    </div>
+    <div class="stat-card">
+        <h3>Тіркелген халық саны</h3>
+        <h1 id="peopleCounter">0</h1>
     </div>
 </section>
 
-<section class="contact-info">
-    <h3>Байланыс деректері</h3>
-    <p style="margin-top: 15px;"><b>Мекенжай:</b> Алматы қ., Мкрн Шугыла 340/36 к9</p>
-    <p><b>Телефон:</b> 87079097258</p>
-</section>
+<div class="info">
+    <p><b>Мекенжай:</b> Алматы қ., Мкрн Шугыла 340/36 к9</p>
+    <p><b>Байланыс:</b> 87079097258</p>
+</div>
 
 <footer>© 2026 Арман баспана қоғамдық қоры</footer>
 
 <script>
-    // Firebase-ке қосылу (Тесттік база)
+    // 1. СІЗДІҢ FIREBASE СІЛТЕМЕҢІЗ (Осыны өзгертіңіз)
     const firebaseConfig = {
         databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" 
     };
-    
+
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const database = firebase.database();
 
-    // Батырманы тексеру (Браузер жадынан)
+    // Браузерден тіркелу статусын тексеру
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
 
-    // БАЗАДАН ДЕРЕКТЕРДІ ОҚУ
+    // 2. Деректерді базадан нақты уақытта алу
     database.ref('stats').on('value', (snapshot) => {
         const data = snapshot.val() || { people: 0, money: 0 };
-        document.getElementById("peopleCounter").innerText = data.people;
+        
+        // Счетчиктерді жаңарту
+        document.getElementById("peopleCounter").innerText = data.people.toLocaleString();
         document.getElementById("moneyCounter").innerText = data.money.toLocaleString() + " ₸";
         
+        // Егер бұрын басылса, батырманы бірден жабу
         if (hasApplied) {
-            updateButtonUI();
+            disableApplyButton();
         }
-    }, (error) => {
-        console.log("Базаға қосылу қатесі: ", error);
     });
 
-    // САДАҚА БЕРУ (Базадағы санды арттыру)
+    // 3. САДАҚА БЕРУ (Kaspi-ге өткенде ақша мен адам саны қосылады)
     function handleDonation() {
-        database.ref('stats').transaction((currentData) => {
-            if (currentData === null) return { people: 1, money: 5000 };
+        database.ref('stats').transaction((current) => {
+            if (!current) return { people: 1, money: 500 }; // Алғашқы мән
             return {
-                people: (currentData.people || 0) + 1,
-                money: (currentData.money || 0) + 5000
+                people: (current.people || 0) + 1,
+                money: (current.money || 0) + 500 // Әр басқанда 500 тг қосады (мысалы)
             };
         });
     }
 
-    // ӨТІНІШ БЕРУ
+    // 4. ӨТІНІШ БЕРУ (Тек бір рет және WhatsApp-қа өту)
     function handleApplication() {
         if (hasApplied) return;
 
-        database.ref('stats/people').transaction((currentPeople) => {
-            return (currentPeople || 0) + 1;
-        });
-
-        hasApplied = true;
-        localStorage.setItem('hasApplied', 'true');
-        updateButtonUI();
-
-        window.open("https://wa.me/87079097258?text=Сәламатсыз ба! Үй кезегіне өтініш беремін.", "_blank");
+        // Базада тек адам санын арттыру
+        database.ref('stats/people').transaction((p) => (p || 0) + 1)
+        .then(() => {
+            hasApplied = true;
+            localStorage.setItem('hasApplied', 'true');
+            disableApplyButton();
+            
+            // WhatsApp-қа бағыттау
+            window.location.href = "https://wa.me/7079097258?text=" + encodeURIComponent("Сәламатсыз ба! Арман баспана қорына үй кезегі бойынша өтініш білдіремін.");
+        })
+        .catch((err) => console.error("Қате:", err));
     }
 
-    function updateButtonUI() {
+    function disableApplyButton() {
         const btn = document.getElementById("applyBtn");
         if (btn) {
             btn.disabled = true;
