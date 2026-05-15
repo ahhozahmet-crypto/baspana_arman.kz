@@ -15,18 +15,13 @@
         .logo h2 { color: #00b8b0; font-weight: 800; }
         .hero { padding: 60px 8%; text-align: center; }
         .btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        .btn { padding: 16px 32px; border-radius: 50px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; text-decoration: none; font-size: 16px; }
+        .btn { padding: 16px 32px; border-radius: 50px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; text-decoration: none; font-size: 16px; display: inline-block; }
         .btn-primary { background: #00cfc6; color: white; }
         .btn-secondary { background: white; color: #00b8b0; border: 2px solid #00b8b0; }
         .btn:disabled { background: #e0e0e0 !important; color: #999 !important; border: none !important; cursor: not-allowed; }
         .stats-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 40px; padding: 0 8%; }
         .stat-card { background: white; padding: 30px; border-radius: 25px; min-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; flex: 1; }
         .stat-card h1 { color: #00b8b0; font-size: 38px; font-weight: 800; }
-        
-        /* Админ панель стилі */
-        #adminPanel { display: none; background: #333; color: white; padding: 20px; position: fixed; bottom: 0; width: 100%; z-index: 2000; text-align: center; }
-        #adminPanel input { padding: 10px; border-radius: 5px; border: none; margin: 5px; }
-        .admin-toggle { opacity: 0.1; cursor: default; position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; }
     </style>
 </head>
 <body>
@@ -36,7 +31,8 @@
 <section class="hero">
     <h1>Әр отбасыға баспана</h1>
     <div class="btns">
-        <a class="btn btn-primary" href="https://pay.kaspi.kz/pay/kpiupo0h" target="_blank">Садақа беру</a>
+        <button class="btn btn-primary" onclick="donateWithAmount()">Садақа беру</button>
+        
         <button id="applyBtn" class="btn btn-secondary" onclick="handleApplication()">Өтініш беру</button>
     </div>
 </section>
@@ -46,78 +42,50 @@
     <div class="stat-card"><h3>Тіркелген халық саны</h3><h1 id="peopleCounter">0</h1></div>
 </section>
 
-<div id="adminPanel">
-    <h4>Басқару панелі (Тек админ)</h4>
-    <input type="number" id="newAmount" placeholder="Қосылатын сома (₸)">
-    <button onclick="addMoney()" style="padding: 10px;">Ақша қосу</button>
-    <button onclick="closeAdmin()" style="padding: 10px; background: red; color: white; border: none;">Жабу</button>
-</div>
-
-<div class="admin-toggle" onclick="adminClick()"></div>
-
-<footer>
-    <div style="text-align: center; margin-top: 20px;">
-        <p>Мекенжай: Алматы қ., Мкрн Шугыла 340/36 к9</p>
-    </div>
-    <p style="text-align: center; padding: 20px; color: #bbb;">© 2026 Арман баспана</p>
+<footer style="text-align: center; padding: 40px; color: #666;">
+    <p>Мекенжай: Алматы қ., Мкрн Шугыла 340/36 к9</p>
+    <p>Тел: 87079097258</p>
 </footer>
 
 <script>
-    const firebaseConfig = {
-        databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" 
-    };
-
+    const firebaseConfig = { databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
 
-    // Статистиканы оқу
     database.ref('stats').on('value', (snapshot) => {
         const data = snapshot.val() || { people: 0, money: 0 };
-        document.getElementById("peopleCounter").innerText = data.people.toLocaleString();
+        document.getElementById("peopleCounter").innerText = data.people;
         document.getElementById("moneyCounter").innerText = data.money.toLocaleString() + " ₸";
-        if (hasApplied) disableApplyButton();
+        if (hasApplied) {
+            const btn = document.getElementById("applyBtn");
+            btn.disabled = true;
+            btn.innerText = "Өтініш жіберілді";
+        }
     });
 
-    // ӨТІНІШ БЕРУ
+    // САДАҚА БЕРУ ФУНКЦИЯСЫ (Соманы автоматты қосу үшін)
+    function donateWithAmount() {
+        let amount = prompt("Қанша сома аударасыз? (Мысалы: 100)", "100");
+        if (amount != null && !isNaN(amount) && amount > 0) {
+            database.ref('stats/money').transaction((m) => (m || 0) + parseInt(amount));
+            // Соманы қосып барып Kaspi-ге жібереміз
+            window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
+        }
+    }
+
+    // ӨТІНІШ БЕРУ ФУНКЦИЯСЫ
     function handleApplication() {
         if (hasApplied) return;
-        database.ref('stats/people').transaction((p) => (p || 0) + 1).then(() => {
+
+        database.ref('stats/people').transaction((p) => (p || 0) + 1)
+        .then(() => {
             hasApplied = true;
             localStorage.setItem('hasApplied', 'true');
-            disableApplyButton();
-            window.location.href = "https://wa.me/7079097258?text=Сәламатсыз ба! Үй кезегіне өтініш беремін.";
+            // WhatsApp-қа бірден өту
+            window.location.href = "https://wa.me/7079097258?text=" + encodeURIComponent("Сәламатсыз ба! Үй кезегі бойынша өтініш беремін.");
         });
-    }
-
-    function disableApplyButton() {
-        const btn = document.getElementById("applyBtn");
-        if (btn) { btn.disabled = true; btn.innerText = "Өтініш жіберілді"; }
-    }
-
-    // АДМИН ПУНКТТЕРІ
-    let clicks = 0;
-    function adminClick() {
-        clicks++;
-        if (clicks >= 5) {
-            document.getElementById('adminPanel').style.display = 'block';
-            clicks = 0;
-        }
-    }
-
-    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
-
-    // Ақшаны қолмен қосу (Kaspi-ден түскенде)
-    function addMoney() {
-        let val = parseInt(document.getElementById('newAmount').value);
-        if (val > 0) {
-            database.ref('stats/money').transaction((m) => (m || 0) + val)
-            .then(() => {
-                alert("Сома сәтті қосылды!");
-                document.getElementById('newAmount').value = "";
-            });
-        }
     }
 </script>
 
