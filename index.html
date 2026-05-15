@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Арман баспана қоғамдық қоры</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
-
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -14,24 +13,20 @@
         body { background: #f4ffff; color: #222; }
         header { width: 100%; padding: 20px 8%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
         .logo h2 { color: #00b8b0; font-weight: 800; }
-        
         .hero { padding: 60px 8%; text-align: center; }
         .btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        
         .btn { padding: 16px 32px; border-radius: 50px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; text-decoration: none; font-size: 16px; }
-        .btn-primary { background: #00cfc6; color: white; box-shadow: 0 5px 15px rgba(0, 207, 198, 0.3); }
+        .btn-primary { background: #00cfc6; color: white; }
         .btn-secondary { background: white; color: #00b8b0; border: 2px solid #00b8b0; }
-        
-        /* Батырма бұғатталғандағы стиль */
-        .btn:disabled { background: #e0e0e0 !important; color: #999 !important; border: none !important; cursor: not-allowed; transform: none !important; }
-
+        .btn:disabled { background: #e0e0e0 !important; color: #999 !important; border: none !important; cursor: not-allowed; }
         .stats-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 40px; padding: 0 8%; }
         .stat-card { background: white; padding: 30px; border-radius: 25px; min-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; flex: 1; }
-        .stat-card h3 { font-size: 16px; color: #666; margin-bottom: 10px; }
         .stat-card h1 { color: #00b8b0; font-size: 38px; font-weight: 800; }
-
-        .info { text-align: center; margin-top: 40px; padding: 20px; color: #555; }
-        footer { text-align: center; padding: 30px; color: #bbb; font-size: 14px; }
+        
+        /* Админ панель стилі */
+        #adminPanel { display: none; background: #333; color: white; padding: 20px; position: fixed; bottom: 0; width: 100%; z-index: 2000; text-align: center; }
+        #adminPanel input { padding: 10px; border-radius: 5px; border: none; margin: 5px; }
+        .admin-toggle { opacity: 0.1; cursor: default; position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; }
     </style>
 </head>
 <body>
@@ -40,94 +35,88 @@
 
 <section class="hero">
     <h1>Әр отбасыға баспана</h1>
-    <p style="margin-top: 10px; color: #666;">Қайырымдылық жасап, үй кезегіне тіркеліңіз</p>
-    
     <div class="btns">
-        <a class="btn btn-primary" href="https://pay.kaspi.kz/pay/kpiupo0h" target="_blank" onclick="handleDonation()">Садақа беру</a>
-        
+        <a class="btn btn-primary" href="https://pay.kaspi.kz/pay/kpiupo0h" target="_blank">Садақа беру</a>
         <button id="applyBtn" class="btn btn-secondary" onclick="handleApplication()">Өтініш беру</button>
     </div>
 </section>
 
 <section class="stats-grid">
-    <div class="stat-card">
-        <h3>Жиналған қаражат</h3>
-        <h1 id="moneyCounter">0 ₸</h1>
-    </div>
-    <div class="stat-card">
-        <h3>Тіркелген халық саны</h3>
-        <h1 id="peopleCounter">0</h1>
-    </div>
+    <div class="stat-card"><h3>Жиналған қаражат</h3><h1 id="moneyCounter">0 ₸</h1></div>
+    <div class="stat-card"><h3>Тіркелген халық саны</h3><h1 id="peopleCounter">0</h1></div>
 </section>
 
-<div class="info">
-    <p><b>Мекенжай:</b> Алматы қ., Мкрн Шугыла 340/36 к9</p>
-    <p><b>Байланыс:</b> 87079097258</p>
+<div id="adminPanel">
+    <h4>Басқару панелі (Тек админ)</h4>
+    <input type="number" id="newAmount" placeholder="Қосылатын сома (₸)">
+    <button onclick="addMoney()" style="padding: 10px;">Ақша қосу</button>
+    <button onclick="closeAdmin()" style="padding: 10px; background: red; color: white; border: none;">Жабу</button>
 </div>
 
-<footer>© 2026 Арман баспана қоғамдық қоры</footer>
+<div class="admin-toggle" onclick="adminClick()"></div>
+
+<footer>
+    <div style="text-align: center; margin-top: 20px;">
+        <p>Мекенжай: Алматы қ., Мкрн Шугыла 340/36 к9</p>
+    </div>
+    <p style="text-align: center; padding: 20px; color: #bbb;">© 2026 Арман баспана</p>
+</footer>
 
 <script>
-    // 1. СІЗДІҢ FIREBASE СІЛТЕМЕҢІЗ (Осыны өзгертіңіз)
     const firebaseConfig = {
         databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" 
     };
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Браузерден тіркелу статусын тексеру
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
 
-    // 2. Деректерді базадан нақты уақытта алу
+    // Статистиканы оқу
     database.ref('stats').on('value', (snapshot) => {
         const data = snapshot.val() || { people: 0, money: 0 };
-        
-        // Счетчиктерді жаңарту
         document.getElementById("peopleCounter").innerText = data.people.toLocaleString();
         document.getElementById("moneyCounter").innerText = data.money.toLocaleString() + " ₸";
-        
-        // Егер бұрын басылса, батырманы бірден жабу
-        if (hasApplied) {
-            disableApplyButton();
-        }
+        if (hasApplied) disableApplyButton();
     });
 
-    // 3. САДАҚА БЕРУ (Kaspi-ге өткенде ақша мен адам саны қосылады)
-    function handleDonation() {
-        database.ref('stats').transaction((current) => {
-            if (!current) return { people: 1, money: 500 }; // Алғашқы мән
-            return {
-                people: (current.people || 0) + 1,
-                money: (current.money || 0) + 500 // Әр басқанда 500 тг қосады (мысалы)
-            };
-        });
-    }
-
-    // 4. ӨТІНІШ БЕРУ (Тек бір рет және WhatsApp-қа өту)
+    // ӨТІНІШ БЕРУ
     function handleApplication() {
         if (hasApplied) return;
-
-        // Базада тек адам санын арттыру
-        database.ref('stats/people').transaction((p) => (p || 0) + 1)
-        .then(() => {
+        database.ref('stats/people').transaction((p) => (p || 0) + 1).then(() => {
             hasApplied = true;
             localStorage.setItem('hasApplied', 'true');
             disableApplyButton();
-            
-            // WhatsApp-қа бағыттау
-            window.location.href = "https://wa.me/7079097258?text=" + encodeURIComponent("Сәламатсыз ба! Арман баспана қорына үй кезегі бойынша өтініш білдіремін.");
-        })
-        .catch((err) => console.error("Қате:", err));
+            window.location.href = "https://wa.me/7079097258?text=Сәламатсыз ба! Үй кезегіне өтініш беремін.";
+        });
     }
 
     function disableApplyButton() {
         const btn = document.getElementById("applyBtn");
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = "Өтініш жіберілді";
+        if (btn) { btn.disabled = true; btn.innerText = "Өтініш жіберілді"; }
+    }
+
+    // АДМИН ПУНКТТЕРІ
+    let clicks = 0;
+    function adminClick() {
+        clicks++;
+        if (clicks >= 5) {
+            document.getElementById('adminPanel').style.display = 'block';
+            clicks = 0;
+        }
+    }
+
+    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+
+    // Ақшаны қолмен қосу (Kaspi-ден түскенде)
+    function addMoney() {
+        let val = parseInt(document.getElementById('newAmount').value);
+        if (val > 0) {
+            database.ref('stats/money').transaction((m) => (m || 0) + val)
+            .then(() => {
+                alert("Сома сәтті қосылды!");
+                document.getElementById('newAmount').value = "";
+            });
         }
     }
 </script>
