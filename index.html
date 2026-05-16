@@ -6,7 +6,6 @@
     <title>Арман баспана қоғамдық қоры</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -37,7 +36,7 @@
         
         footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
 
-        /* Modal Styles */
+        /* Садақа беру модальді терезесі */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -95,7 +94,6 @@
 
 <footer>© 2026 Арман баспана</footer>
 
-<!-- Donation Modal -->
 <div id="donationModal" class="modal-overlay">
     <div class="modal-content">
         <h3>💚 Садақа сомасы</h3>
@@ -109,7 +107,7 @@
 </div>
 
 <script>
-    // Firebase баптаулары
+    // Firebase деректер қорымен байланыс
     const firebaseConfig = { databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
@@ -118,11 +116,15 @@
     let pendingAmount = null;
     let isWaitingForPayment = false;
 
-    // Базадан мәліметтерді нақты уақытта алып отыру
+    // Базадан мәліметтерді нақты уақытта алып, экранға шығару
     database.ref('stats').on('value', (snap) => {
         const data = snap.val() || { people: 0, money: 0 };
         document.getElementById("peopleCounter").innerText = data.people || 0;
-        document.getElementById("moneyCounter").innerText = (data.money || 0).toLocaleString() + " ₸";
+        
+        // Тиын мен соманы әдемі форматта шығару (мысалы: 181 331,97 ₸)
+        const currentMoney = data.money || 0;
+        document.getElementById("moneyCounter").innerText = currentMoney.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " ₸";
+        
         if (hasApplied) lockButton();
     });
 
@@ -157,15 +159,15 @@
         closeModal();
     }
 
-    // Пайдаланушы Kaspi-ден сайтқа қайта оралғанда іске қосылатын функция
+    // Пайдаланушы Kaspi-ден сайтқа қайта оралған сәтте іске қосылады
     window.addEventListener('focus', () => {
         if (isWaitingForPayment && pendingAmount !== null) {
-            isWaitingForPayment = false; // Қайталанбас үшін бірден өшіреміз
+            isWaitingForPayment = false; // Қайталанбас үшін бірден жабамыз
             
             setTimeout(() => {
                 if (confirm(`Сіз ${pendingAmount.toLocaleString()} ₸ сомасын Kaspi арқылы аудардыңыз ба?\nРастасаңыз, қор есептегішіне қосылады.`)) {
                     
-                    // Firebase-ке соманы қосу (Егер stats немесе money жоқ болса, 0-ге қосады)
+                    // Базадағы қаражатқа соманы қосу транзакциясы
                     database.ref('stats/money').transaction((currentMoney) => {
                         return (currentMoney || 0) + pendingAmount;
                     }).then(() => {
@@ -173,12 +175,12 @@
                         pendingAmount = null;
                     }).catch((error) => {
                         console.error("Firebase қатесі: ", error);
-                        alert("Қате кетті! Firebase консолінде 'Rules' (Ережелер) ашық екенін тексеріңіз.");
+                        alert("Қате кетті! Қайталап көріңіз.");
                         pendingAmount = null;
                     });
 
                 } else {
-                    alert("Төлем бас тартылды. Қаражат қосылмады.");
+                    alert("Төлем расталмады. Қаражат қосылмады.");
                     pendingAmount = null;
                 }
             }, 500);
