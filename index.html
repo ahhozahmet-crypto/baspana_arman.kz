@@ -153,13 +153,8 @@
             return (currentMoney || 0) + amount;
         }).then(() => {
             closeModal();
-            
-            // ТЕЛЕФОНДА ДА, КОМПЬЮТЕРДЕ ДЕ БҰҒАТТАУСЫЗ ӨТУ ҮШІН СІЛТЕМЕНІ ОСЫЛАЙ АШАМЫЗ:
-            const kaspiUrl = "https://pay.kaspi.kz/pay/kpiupo0h";
-            
-            // Жаңа терезе ашудың орнына осы вкладканың өзін Kaspi-ге бағыттаймыз (телефон үшін өте ыңғайлы)
-            window.location.href = kaspiUrl;
-            
+            // Бұғаттаусыз бірден Kaspi бетіне өту
+            window.location.href = "https://pay.kaspi.kz/pay/kpiupo0h";
         }).catch((error) => {
             console.error("Firebase қатесі: ", error);
             alert("Қате кетті, қайталап көріңіз.");
@@ -171,20 +166,23 @@
             alert("Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
             return;
         }
-
-        window.location.href = "https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d";
         
+        // Firebase-тегі адам санын 1-ге көбейту
         database.ref('stats/people').transaction((p) => (p || 0) + 1)
             .then(() => {
                 hasApplied = true;
                 localStorage.setItem('hasApplied', 'true');
                 lockButton();
+                
+                // СІЗДІҢ ЖЕКЕ WHATSAPP ЧАТЫҢЫЗҒА БАҒЫТТАУ (Телефонда да, компьютерде де ашылады)
+                window.location.href = "https://wa.me/77079097258";
             })
             .catch((err) => {
                 console.error("Қате:", err);
                 hasApplied = true;
                 localStorage.setItem('hasApplied', 'true');
                 lockButton();
+                window.location.href = "https://wa.me/77079097258";
             });
     }
 
