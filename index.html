@@ -1,3 +1,13 @@
+Түзетілді. Енді Өтініш беру батырмасы басылғанда:
+
+1. WhatsApp каналы ашылады
+2. Firebase-те "Тіркелген халық" саны +1-ге артады
+3. Батырма өшіп, "Өтініш берілді" деп жазылады
+4. Бір құрылғыда бір рет қана өтініш беруге болады
+
+Толық код:
+
+```html
 <!DOCTYPE html>
 <html lang="kk">
 <head>
@@ -36,7 +46,6 @@
         
         footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
 
-        /* Модальды терезе */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -135,7 +144,6 @@
 
 <footer>© 2026 Арман баспана</footer>
 
-<!-- Модальды терезе -->
 <div id="donationModal" class="modal-overlay">
     <div class="modal-content">
         <h3>💚 Садақа сомасы</h3>
@@ -149,18 +157,13 @@
 </div>
 
 <script>
-    // Firebase баптаулары
     const firebaseConfig = { databaseURL: "https://arman-baspana-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // 1. Әр құрылғыда бір рет өтініш беру
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
-    
-    // 2. Садақа үшін күтілетін сома
     let pendingAmount = null;
 
-    // Деректерді базадан оқу
     database.ref('stats').on('value', (snap) => {
         const data = snap.val() || { people: 0, money: 0 };
         document.getElementById("peopleCounter").innerText = data.people;
@@ -168,7 +171,6 @@
         if (hasApplied) lockButton();
     });
 
-    // ---------- САДАҚА БЕРУ ----------
     function openDonationModal() {
         document.getElementById("donationModal").classList.add("active");
         document.getElementById("donationAmount").value = "1000";
@@ -195,12 +197,9 @@
         }
         
         pendingAmount = amount;
-        
-        // Kaspi төлем терезесін ашу
         window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
         closeModal();
         
-        // Төлемнен кейін растау
         setTimeout(() => {
             if (confirm(`Сіз ${pendingAmount.toLocaleString()} ₸ сомасын Kaspi арқылы аудардыңыз ба? Растасаңыз, қор сомасына қосылады.`)) {
                 database.ref('stats/money').transaction((currentMoney) => {
@@ -218,20 +217,17 @@
         }, 1500);
     }
 
-    // ---------- ӨТІНІШ БЕРУ (WhatsApp КАНАЛЫНА) ----------
     function handleApply() {
+        // Егер бұрын өтініш берсе, тоқтату
         if (hasApplied) {
             alert("Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
             return;
         }
 
-        // WhatsApp каналына бағыттау (сілтеме)
-        const whatsappChannelUrl = "https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d";
+        // 1. WhatsApp каналын ашу
+        window.location.href = "https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d";
         
-        // Ешқандай хабарлама жіберілмейді, тек канал ашылады
-        window.location.href = whatsappChannelUrl;
-        
-        // Адам санын арттыру (бір құрылғыда бір рет)
+        // 2. Firebase-те адам санын көбейту
         database.ref('stats/people').transaction((p) => (p || 0) + 1)
             .then(() => {
                 hasApplied = true;
@@ -254,12 +250,8 @@
             btn.innerText = "Өтініш берілді";
         }
     }
-    
-    // Бет жүктелгенде, егер бұрын өтініш берсе, батырманы өшіру
-    window.onload = function() {
-        if (hasApplied) lockButton();
-    }
 </script>
 
 </body>
 </html>
+```
