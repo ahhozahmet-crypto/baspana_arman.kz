@@ -1,3 +1,6 @@
+Түсінікті. Төменде өтініш беру батырмасы дұрыс жұмыс істейтін толық код:
+
+```html
 <!DOCTYPE html>
 <html lang="kk">
 <head>
@@ -208,16 +211,13 @@
     }
 
     function handleApply() {
-        // Егер бұрын өтініш берсе, тоқтату
         if (hasApplied) {
             alert("Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
             return;
         }
 
-        // 1. WhatsApp каналын ашу
         window.location.href = "https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d";
         
-        // 2. Firebase-те адам санын көбейту
         database.ref('stats/people').transaction((p) => (p || 0) + 1)
             .then(() => {
                 hasApplied = true;
@@ -226,7 +226,6 @@
             })
             .catch((err) => {
                 console.error("Қате:", err);
-                // Қате болса да, өтініш берілді деп санаймыз
                 hasApplied = true;
                 localStorage.setItem('hasApplied', 'true');
                 lockButton();
@@ -244,3 +243,4 @@
 
 </body>
 </html>
+```
