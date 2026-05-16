@@ -113,15 +113,12 @@
     const database = firebase.database();
 
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
-    let pendingAmount = null;
-    let isWaitingForPayment = false;
 
     // Базадан мәліметтерді нақты уақытта алып, экранға шығару
     database.ref('stats').on('value', (snap) => {
         const data = snap.val() || { people: 0, money: 0 };
         document.getElementById("peopleCounter").innerText = data.people || 0;
         
-        // Тиын мен соманы әдемі форматта шығару (мысалы: 181 331,97 ₸)
         const currentMoney = data.money || 0;
         document.getElementById("moneyCounter").innerText = currentMoney.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " ₸";
         
@@ -151,41 +148,18 @@
             return;
         }
 
-        pendingAmount = amount;
-        isWaitingForPayment = true;
-        
-        // Kaspi сілтемесін жаңа терезеде ашу
-        window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
-        closeModal();
+        // Автоматты түрде соманы Firebase базасына бірден қосамыз
+        database.ref('stats/money').transaction((currentMoney) => {
+            return (currentMoney || 0) + amount;
+        }).then(() => {
+            // Базаға сәтті қосылған соң Kaspi төлем бетін ашамыз
+            window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
+            closeModal();
+        }).catch((error) => {
+            console.error("Firebase қатесі: ", error);
+            alert("Қате кетті, қайталап көріңіз.");
+        });
     }
-
-    // Пайдаланушы Kaspi-ден сайтқа қайта оралған сәтте іске қосылады
-    window.addEventListener('focus', () => {
-        if (isWaitingForPayment && pendingAmount !== null) {
-            isWaitingForPayment = false; // Қайталанбас үшін бірден жабамыз
-            
-            setTimeout(() => {
-                if (confirm(`Сіз ${pendingAmount.toLocaleString()} ₸ сомасын Kaspi арқылы аудардыңыз ба?\nРастасаңыз, қор есептегішіне қосылады.`)) {
-                    
-                    // Базадағы қаражатқа соманы қосу транзакциясы
-                    database.ref('stats/money').transaction((currentMoney) => {
-                        return (currentMoney || 0) + pendingAmount;
-                    }).then(() => {
-                        alert(`✅ Рахмет! ${pendingAmount.toLocaleString()} ₸ қорға сәтті қосылды.`);
-                        pendingAmount = null;
-                    }).catch((error) => {
-                        console.error("Firebase қатесі: ", error);
-                        alert("Қате кетті! Қайталап көріңіз.");
-                        pendingAmount = null;
-                    });
-
-                } else {
-                    alert("Төлем расталмады. Қаражат қосылмады.");
-                    pendingAmount = null;
-                }
-            }, 500);
-        }
-    });
 
     function handleApply() {
         if (hasApplied) {
