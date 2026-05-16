@@ -148,13 +148,18 @@
             return;
         }
 
-        // Автоматты түрде соманы Firebase базасына бірден қосамыз
+        // Базаға соманы қосу
         database.ref('stats/money').transaction((currentMoney) => {
             return (currentMoney || 0) + amount;
         }).then(() => {
-            // Базаға сәтті қосылған соң Kaspi төлем бетін ашамыз
-            window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
             closeModal();
+            
+            // ТЕЛЕФОНДА ДА, КОМПЬЮТЕРДЕ ДЕ БҰҒАТТАУСЫЗ ӨТУ ҮШІН СІЛТЕМЕНІ ОСЫЛАЙ АШАМЫЗ:
+            const kaspiUrl = "https://pay.kaspi.kz/pay/kpiupo0h";
+            
+            // Жаңа терезе ашудың орнына осы вкладканың өзін Kaspi-ге бағыттаймыз (телефон үшін өте ыңғайлы)
+            window.location.href = kaspiUrl;
+            
         }).catch((error) => {
             console.error("Firebase қатесі: ", error);
             alert("Қате кетті, қайталап көріңіз.");
