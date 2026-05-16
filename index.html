@@ -128,7 +128,7 @@
     <div class="social-links">
         <a href="https://www.instagram.com/arman_baspana_/" target="_blank" class="social-link insta">Instagram</a>
         <a href="https://www.tiktok.com/@arman_baspana07kz" target="_blank" class="social-link tiktok">TikTok</a>
-        <a href="https://wa.me/77079097258" target="_blank" class="social-link whatsapp">WhatsApp</a>
+        <a href="https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d" target="_blank" class="social-link whatsapp">WhatsApp</a>
     </div>
     <p style="margin-top: 20px;"><b>Мекенжай:</b> Алматы қ., Шугыла 340/36 к9</p>
 </section>
@@ -154,8 +154,11 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // 1. Әр құрылғыда бір рет өтініш беру
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
-    let pendingAmount = null; // Күтілетін сома
+    
+    // 2. Садақа үшін күтілетін сома
+    let pendingAmount = null;
 
     // Деректерді базадан оқу
     database.ref('stats').on('value', (snap) => {
@@ -165,7 +168,7 @@
         if (hasApplied) lockButton();
     });
 
-    // ------------------- САДАҚА (ТЕК KASPI ТӨЛЕМІНЕН КЕЙІН ҚОСЫЛАДЫ) -------------------
+    // ---------- САДАҚА БЕРУ ----------
     function openDonationModal() {
         document.getElementById("donationModal").classList.add("active");
         document.getElementById("donationAmount").value = "1000";
@@ -181,7 +184,6 @@
         const amountInput = document.getElementById("donationAmount");
         let amount = parseInt(amountInput.value);
         
-        // Валидация
         if (isNaN(amount) || amount <= 0) {
             document.getElementById("amountError").innerText = "Дұрыс сома енгізіңіз!";
             return;
@@ -192,36 +194,22 @@
             return;
         }
         
-        // Күтілетін соманы сақтаймыз
         pendingAmount = amount;
         
-        // Kaspi төлем терезесін ашамыз
-        const kaspiWindow = window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
-        
-        if (!kaspiWindow) {
-            // Егер блокер болса, ескертеміз
-            alert("Төлем терезесін ашу үшін браузердің блоктауын өшіріңіз немесе сілтемені өзіңіз ашыңыз.\nТөлем жасағаннан кейін қаражат автоматты түрде қосылады.");
-        }
-        
-        // Біз Kaspi төлемі аяқталғанын тікелей анықтай алмаймыз, 
-        // бірақ пайдаланушы төлемнен қайтқан соң растау сұраймыз (негізінде Kaspi қайта оралған соң)
-        // Бұл - "адам төледім" батырмасын басқан кезде қосылатын әдіс
-        // Ең дұрысы: Kaspi-ден callback болмағандықтан, пайдаланушы растағаннан кейін қосамыз.
-        
+        // Kaspi төлем терезесін ашу
+        window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
         closeModal();
         
-        // Kaspi төлемінен кейін растау сұраймыз (өйткені толық автоматты callback мүмкін емес)
+        // Төлемнен кейін растау
         setTimeout(() => {
-            if (confirm(`Сіз ${amount.toLocaleString()} ₸ сомасын Kaspi арқылы аудардыңыз ба? Растасаңыз, қор сомасына қосылады.`)) {
-                // Қаражатты Firebase-ке қосу
+            if (confirm(`Сіз ${pendingAmount.toLocaleString()} ₸ сомасын Kaspi арқылы аудардыңыз ба? Растасаңыз, қор сомасына қосылады.`)) {
                 database.ref('stats/money').transaction((currentMoney) => {
                     return (currentMoney || 0) + pendingAmount;
                 }).then(() => {
                     alert(`✅ Рахмет! ${pendingAmount.toLocaleString()} ₸ қорға қосылды.`);
                     pendingAmount = null;
-                }).catch((error) => {
-                    console.error("Қате:", error);
-                    alert("Қосылу кезінде қате кетті. Қайталап көріңіз.");
+                }).catch(() => {
+                    alert("Қате кетті. Қайталап көріңіз.");
                 });
             } else {
                 alert("Төлем жасалмады. Қаражат қосылмады.");
@@ -230,32 +218,46 @@
         }, 1500);
     }
 
-    // ӨТІНІШ БЕРУ ФУНКЦИЯСЫ (әр құрылғыда бір рет)
+    // ---------- ӨТІНІШ БЕРУ (WhatsApp КАНАЛЫНА) ----------
     function handleApply() {
-        if (hasApplied) return;
+        if (hasApplied) {
+            alert("Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
+            return;
+        }
 
-        // Базадағы адам санын +1-ге арттыру
+        // WhatsApp каналына бағыттау (сілтеме)
+        const whatsappChannelUrl = "https://whatsapp.com/channel/0029Vb7l4UuKwqSWS0sijR0d";
+        
+        // Ешқандай хабарлама жіберілмейді, тек канал ашылады
+        window.location.href = whatsappChannelUrl;
+        
+        // Адам санын арттыру (бір құрылғыда бір рет)
         database.ref('stats/people').transaction((p) => (p || 0) + 1)
-        .then(() => {
-            hasApplied = true;
-            localStorage.setItem('hasApplied', 'true');
-            lockButton();
-            
-            // WhatsApp-қа өту
-            window.location.href = "https://wa.me/77079097258?text=" + encodeURIComponent("Сәламатсыз ба! Арман баспана қорына үй кезегі бойынша өтініш беремін.");
-        })
-        .catch(err => {
-            // Қате болса да WhatsApp-қа жіберу
-            window.location.href = "https://wa.me/77079097258";
-        });
+            .then(() => {
+                hasApplied = true;
+                localStorage.setItem('hasApplied', 'true');
+                lockButton();
+            })
+            .catch((err) => {
+                console.error("Қате:", err);
+                // Қате болса да, өтініш берілді деп санаймыз
+                hasApplied = true;
+                localStorage.setItem('hasApplied', 'true');
+                lockButton();
+            });
     }
 
     function lockButton() {
         const btn = document.getElementById("applyBtn");
         if (btn) {
             btn.disabled = true;
-            btn.innerText = "Өтініш жіберілді";
+            btn.innerText = "Өтініш берілді";
         }
+    }
+    
+    // Бет жүктелгенде, егер бұрын өтініш берсе, батырманы өшіру
+    window.onload = function() {
+        if (hasApplied) lockButton();
     }
 </script>
 
