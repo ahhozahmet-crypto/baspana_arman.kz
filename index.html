@@ -36,7 +36,7 @@
         
         footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
 
-        /* Садақа беру модальді терезесі */
+        /* Модальды терезелер */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -46,7 +46,9 @@
             visibility: hidden; opacity: 0;
             transition: all 0.3s;
         }
-        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-overlay.active {
+            visibility: visible; opacity: 1;
+        }
         .modal-content {
             background: white; padding: 30px; border-radius: 25px;
             max-width: 90%; width: 350px; text-align: center;
@@ -58,10 +60,22 @@
             font-size: 18px; text-align: center; outline: none;
         }
         .modal-content input:focus { border-color: #00cfc6; }
-        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
-        .modal-btn { padding: 12px 20px; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+        }
         .modal-btn.confirm { background: #00cfc6; color: white; }
         .modal-btn.cancel { background: #f0f0f0; color: #333; }
+        .modal-btn.danger { background: #ff4444; color: white; }
         .error-message { color: red; font-size: 12px; margin-top: -10px; margin-bottom: 10px; }
     </style>
 </head>
@@ -72,7 +86,7 @@
 <section class="hero">
     <h1>Әр отбасыға баспана</h1>
     <div class="btns">
-        <button class="btn btn-primary" onclick="openDonationModal()">Садақа беру</button>
+        <button class="btn btn-primary" onclick="handleDonation()">Садақа беру</button>
         <button id="applyBtn" class="btn btn-secondary" onclick="handleApply()">Өтініш беру</button>
     </div>
 </section>
@@ -94,14 +108,27 @@
 
 <footer>© 2026 Арман баспана</footer>
 
-<div id="donationModal" class="modal-overlay">
+<!-- Төлем растау модальды терезесі -->
+<div id="confirmModal" class="modal-overlay">
     <div class="modal-content">
-        <h3>💚 Садақа сомасы</h3>
+        <h3>💚 Kaspi арқылы төлем жасадыңыз ба?</h3>
+        <p style="margin: 15px 0; color: #666;">Төлем жасасаңыз, "Иә" батырмасын басыңыз</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeConfirmModal(false)">Жоқ</button>
+            <button class="modal-btn confirm" onclick="closeConfirmModal(true)">Иә, төледім</button>
+        </div>
+    </div>
+</div>
+
+<!-- Сома енгізу модальды терезесі -->
+<div id="amountModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>💚 Қанша сома төледіңіз?</h3>
         <input type="number" id="donationAmount" placeholder="Сома (₸)" min="100" value="1000">
         <div id="amountError" class="error-message"></div>
         <div class="modal-buttons">
-            <button class="modal-btn cancel" onclick="closeModal()">Болдырмау</button>
-            <button class="modal-btn confirm" onclick="processDonation()">Kaspi арқылы төлеу</button>
+            <button class="modal-btn cancel" onclick="closeAmountModal()">Болдырмау</button>
+            <button class="modal-btn confirm" onclick="processDonation()">Растау</button>
         </div>
     </div>
 </div>
@@ -113,6 +140,7 @@
     const database = firebase.database();
 
     let hasApplied = localStorage.getItem('hasApplied') === 'true';
+    let isPaymentConfirmed = false;
 
     // Базадан мәліметтерді нақты уақытта алып, экранға шығару
     database.ref('stats').on('value', (snap) => {
@@ -125,14 +153,41 @@
         if (hasApplied) lockButton();
     });
 
-    function openDonationModal() {
-        document.getElementById("donationModal").classList.add("active");
+    // ========= САДАҚА БЕРУ =========
+    function handleDonation() {
+        // Kaspi төлем терезесін ашу
+        window.open("https://pay.kaspi.kz/pay/kpiupo0h", "_blank");
+        
+        // 2 секундтан кейін растау сұрауын көрсету
+        setTimeout(() => {
+            openConfirmModal();
+        }, 1500);
+    }
+
+    function openConfirmModal() {
+        document.getElementById("confirmModal").classList.add("active");
+    }
+
+    function closeConfirmModal(confirmed) {
+        document.getElementById("confirmModal").classList.remove("active");
+        
+        if (confirmed) {
+            // Төлем жасалды - сома сұраймыз
+            openAmountModal();
+        } else {
+            // Төлем жасалмады
+            alert("❌ Төлем жасалмады. Қаражат қосылмады.");
+        }
+    }
+
+    function openAmountModal() {
+        document.getElementById("amountModal").classList.add("active");
         document.getElementById("donationAmount").value = "1000";
         document.getElementById("amountError").innerText = "";
     }
 
-    function closeModal() {
-        document.getElementById("donationModal").classList.remove("active");
+    function closeAmountModal() {
+        document.getElementById("amountModal").classList.remove("active");
     }
 
     function processDonation() {
@@ -147,23 +202,24 @@
             document.getElementById("amountError").innerText = "Ең аз сома 100 ₸";
             return;
         }
-
+        
+        closeAmountModal();
+        
         // Базаға соманы қосу
         database.ref('stats/money').transaction((currentMoney) => {
             return (currentMoney || 0) + amount;
         }).then(() => {
-            closeModal();
-            // Бұғаттаусыз бірден Kaspi бетіне өту
-            window.location.href = "https://pay.kaspi.kz/pay/kpiupo0h";
+            alert(`✅ Рахмет! ${amount.toLocaleString()} ₸ қорға қосылды.`);
         }).catch((error) => {
             console.error("Firebase қатесі: ", error);
-            alert("Қате кетті, қайталап көріңіз.");
+            alert("❌ Қате кетті, қайталап көріңіз.");
         });
     }
 
+    // ========= ӨТІНІШ БЕРУ =========
     function handleApply() {
         if (hasApplied) {
-            alert("Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
+            alert("❌ Сіз бұрын өтініш бергенсіз! Бір адам бір рет қана өтініш бере алады.");
             return;
         }
         
@@ -174,7 +230,7 @@
                 localStorage.setItem('hasApplied', 'true');
                 lockButton();
                 
-                // СІЗДІҢ ЖЕКЕ WHATSAPP ЧАТЫҢЫЗҒА БАҒЫТТАУ (Телефонда да, компьютерде де ашылады)
+                // WhatsApp чатына бағыттау
                 window.location.href = "https://wa.me/77079097258";
             })
             .catch((err) => {
@@ -194,5 +250,6 @@
         }
     }
 </script>
+
 </body>
 </html>
